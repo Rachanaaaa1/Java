@@ -2,7 +2,8 @@ name: Run Java Programs
 
 on:
   push:
-    branches: [ main ]
+    paths:
+      - '**.java'
   workflow_dispatch:
 
 jobs:
@@ -10,30 +11,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Java
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    - name: Compile Java files
-      run: |
-        mkdir -p bin
-        javac -d bin $(find . -name "*.java")
+      - name: Create bin directory
+        run: mkdir -p bin
 
-    - name: List classes with main method
-      run: |
-        echo "Classes with main method:"
-        grep -lr 'public static void main' . | grep .java
+      - name: Compile all Java files
+        run: |
+          find . -name "*.java" > sources.txt
+          javac -d bin @sources.txt
 
-    - name: Run Main class (if exists)
-      run: |
-        if [ -f ./bin/Main.class ]; then
-          java -cp bin Main
-        else
-          echo "⚠️ Main.class not found. Please check your entry point."
-        fi
-      continue-on-error: true
+      - name: Run all Java classes with main method
+        run: |
+          for file in $(find . -name "*.java"); do
+            className=$(basename "$file" .java)
+            if grep -q "public static void main" "$file"; then
+              echo "Running: $className"
+              java -cp bin "$className" < /dev/null || echo "⚠️ Error running $className"
+            fi
+          done
