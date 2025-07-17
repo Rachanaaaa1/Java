@@ -3,7 +3,6 @@ name: Run Java Programs
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
 
 jobs:
   build:
